@@ -1,3 +1,4 @@
+"""
 # Client Side Code
 ### Requests actions for the server to do.
 import socket
@@ -51,3 +52,4 @@ class Client:
                     # Break up the received message by the divider "@"
                     if "@" in response:
                         mess_type, payload = response.split("@")
+"""

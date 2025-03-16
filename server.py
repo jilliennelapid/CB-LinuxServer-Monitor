@@ -1,3 +1,4 @@
+"""
 # Server Side Code
 ### Processes Requests and performs desired actions.
 ### Occasionally returns data or confirmation to client-side
@@ -69,3 +70,4 @@ class Server:
 
                 # Sends a success message to show a good connection between client and server
                 if command == "TEST":
+"""
