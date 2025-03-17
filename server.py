@@ -1,29 +1,23 @@
-"""
-# Server Side Code
-### Processes Requests and performs desired actions.
-### Occasionally returns data or confirmation to client-side
+# On the stress VM, create a file named socket_server.py
 import socket
 import json
+import threading
+import subprocess
 import os
 import time
-import threading
-import base64
-import shutil
-import bcrypt
-from datetime import datetime
 
-# Host and Port that Server Binds to
-host = "10.128.0.3"
+# Define server host and port
+host = '10.128.0.2'  # Listen on all interfaces
 port = 3389
 
 BUFFER_SIZE = 32786
-dashes = '---->'
 FORMAT = 'utf-8'
 
 threads = []
 
-# Class Server that handles server-side actions and data handling
-class Server:
+
+# Class MServer that handles server-side actions and data handling
+class SServer:
     def __init__(self):
         # Creates server-side TCP socket (SOCK_STREAM) with IPv4 (AF_INET)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -62,12 +56,56 @@ class Server:
                 # Get the desired command out of the JSON message
                 command = decode_mess["command"]
 
-                # If a file name is provided, save that data
-                try:
-                    filename = decode_mess["filename"]
-                except KeyError:
-                    filename = ""
+                print(f"command parse success {command}")
 
                 # Sends a success message to show a good connection between client and server
                 if command == "TEST":
-"""
+                    start_time = time.time()
+                    response_time = round((time.time() - start_time), 8)
+
+                    connection.send(f"OK@{response_time}".encode(FORMAT))
+
+                elif command == "GETDATA":
+                    print("made it to GETDATA")
+                    filepath = "/home/jillienne_lapid/stress-testing/server_metrics.json"
+
+                    if not os.path.exists(filepath):
+                        return False
+
+                    print("About to read data from file")
+
+                    with open(f"{filepath}", 'r') as f:
+                        # Saves the file contents to file_data
+                        file_data = f.read(BUFFER_SIZE)
+
+                    print("Data read successfully.")
+
+                    # Dictionary send to server for upload file processing
+                    return_mess = json.dumps({"filedata": file_data})
+
+                    # Sending the data as JSON over client socket
+                    threading.Thread(target=lambda: connection.send(f"STATS@{return_mess}".encode(FORMAT)),
+                                     daemon=True).start()
+
+
+                elif command == "START":
+                    # Start stress test
+                    subprocess.Popen(["/home/jillienne_lapid/stress-testing/stress_test.sh"], shell=True)
+                    connection.send(json.dumps({"status": "started"}).encode('utf-8'))
+
+                elif command == "STOP":
+                    # Stop stress test
+                    subprocess.Popen(["pkill -f stress-ng"], shell=True)
+                    connection.send(json.dumps({"status": "stopped"}).encode('utf-8'))
+
+            except Exception as e:
+                print(f"Error handling client: {e}")
+                break
+
+        connection.close()
+
+
+if __name__ == "__main__":
+    # Initializes the server upon running the code
+    server_socket = SServer()
+    server_socket.activate_server()

@@ -1,4 +1,4 @@
-"""
+
 # Client Side Code
 ### Requests actions for the server to do.
 import socket
@@ -7,9 +7,10 @@ import base64
 import threading
 import os
 from pathlib import Path
+import paramiko
 
 # Host and Port that Client connects to
-host = "34.66.135.153"
+host = "34.71.123.112"
 port = 3389
 
 BUFFER_SIZE = 32786
@@ -37,6 +38,8 @@ class Client:
             print(f"Error: {e}")
             # Return false for a socket connection error
 
+        print("Client Activated.")
+
         # Method that listens for and interprets server responses
         def listen_to_server():
             while True:
@@ -52,4 +55,45 @@ class Client:
                     # Break up the received message by the divider "@"
                     if "@" in response:
                         mess_type, payload = response.split("@")
-"""
+
+                        # OK for Successful Connection
+                        if mess_type == "OK":
+                            print("Connection Test Successful: Server responded with 'OK'")
+                            self.controller.send_sys_response(payload)
+
+                        elif mess_type == "STATS":
+                            self.controller.set_stats(payload)
+
+                        else:
+                            print(f"Unknown message type: {mess_type}")
+                    else:
+                        print(f"Malformed message from server: {response}")
+                except socket.error as e:
+                    print(f"Error receiving server response: {e}")
+                    break
+            self.client.close()  # Ensure the client is closed when exiting the loop
+
+        # Start the listener thread
+        listener_thread = threading.Thread(target=listen_to_server, daemon=True)
+        listener_thread.start()
+
+    """ Methods for Client communication with Server """
+    # Sends test message to server to test the connection
+    def test_connection(self):
+        print("Attempting to send test message")
+        test_mess = {"command": "TEST"}
+        self.client.send(json.dumps(test_mess).encode(FORMAT))
+        return True
+
+    def get_data(self):
+        print("client data request")
+        get_mess = {"command": "GETDATA"}
+        self.client.send(json.dumps(get_mess).encode(FORMAT))
+
+    def start_stress(self):
+        start_mess = {"command": "START"}
+        self.client.send(json.dumps(start_mess).encode(FORMAT))
+
+    def stop_stress(self):
+        stop_mess = {"command": "STOP"}
+        self.client.send(json.dumps(stop_mess).encode(FORMAT))

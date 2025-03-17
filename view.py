@@ -6,12 +6,15 @@ import threading
 import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import requests
+import paramiko
 
 # Class that defines the Main Window elements
 class View(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
         self.controller = None
+        self.started = None
 
         # Sets the aspects of the Main Window
         parent.title("Server File Share Application")
@@ -37,9 +40,17 @@ class View(ctk.CTkFrame):
         """ Top Frame (Full Width) """
         self.top_frame = ctk.CTkFrame(self.window_frame, fg_color='transparent')
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky='nsew')  # Span both columns
+        self.top_frame.grid_columnconfigure(0, weight=1)
+        self.top_frame.grid_columnconfigure(1, weight=0)
 
         self.label_FS = ctk.CTkLabel(self.top_frame, text='Server Diagnostics', font=(globalFont, 45, 'bold'))
-        self.label_FS.pack(pady=10)  # Center label in the top frame
+        self.label_FS.grid(row=0, column=0, sticky='w', padx=30, pady=15)
+
+        self.start_button = ctk.CTkButton(self.top_frame, corner_radius=5, text='Start Monitoring',
+                                               font=(globalFont, 18, 'bold'), fg_color='#59b1f0', hover_color='#3977e3',
+                                               text_color='#fafcff', border_spacing=10, height=50,
+                                               command=self.start_server_monitoring)
+        self.start_button.grid(row=0, column=1, sticky='e', padx=20, pady=10)
 
         """ Left Frame (Diagnostics) """
         self.left_frame = ctk.CTkFrame(self.window_frame, fg_color='transparent')
@@ -57,11 +68,20 @@ class View(ctk.CTkFrame):
         self.values = {}
 
         stats = ["CPU Usage", "Memory Usage", "Disk Usage", "Network Activity", "I/O Activity"]
+
+        CPU_usage = ctk.StringVar()
+        mem_usage = ctk.StringVar()
+        disk_usage = ctk.StringVar()
+        net_activity = ctk.StringVar()
+        IO_activity = ctk.StringVar()
+
+        statVals = [CPU_usage, mem_usage, disk_usage, net_activity, IO_activity]
+
         for i, stat in enumerate(stats):
             self.labels[stat] = ctk.CTkLabel(self.left_frame, text=f"{stat}:", font=("Helvetica", 20))
             self.labels[stat].grid(row=i, column=0, sticky='w', padx=20, pady=5)
 
-            self.values[stat] = ctk.CTkLabel(self.left_frame, text='-', font=("Helvetica", 20, 'bold'))
+            self.values[stat] = ctk.CTkLabel(self.left_frame, text=statVals[i], font=("Helvetica", 20, 'bold'))
             self.values[stat].grid(row=i, column=1, sticky='e', padx=(0, 30), pady=5)
 
         """ Right Frame (Graph Display) """
@@ -74,7 +94,8 @@ class View(ctk.CTkFrame):
 
         # Create Matplotlib figure and canvas
         self.fig, self.ax = plt.subplots(figsize=(6, 4), dpi=100)
-        self.ax.set_title("Server Performance Metrics Over Time", fontsize=35, fontweight='bold', color='blue', fontname="Helvetica")
+        self.ax.set_title("Server Performance Metrics Over Time", fontsize=35, fontweight='bold',
+                          color='blue')
         self.ax.set_ylim(0, 100)  # Percentage range (0-100%)
         self.ax.set_xlabel("Time", fontsize=20)
         self.ax.set_ylabel("Usage (%)", fontsize=20)
@@ -133,6 +154,22 @@ class View(ctk.CTkFrame):
     # Sets the controller that view is connected to
     def set_controller(self, controller):
         self.controller = controller
+
+    def start_server_monitoring(self):
+        """Start stress test, data collection, and API server."""
+        print("Starting monitoring")
+        self.controller.start_monitoring()
+
+    def update_labels(self, data):
+        """Fetch metrics and update labels in the GUI."""
+        print(data)
+
+        if data:
+            for stat, label in self.values.items():
+                label.configure(text=f"{data.get(stat, '-')}%")
+
+        self.after(5000, self.update_labels)  # Refresh every 5 seconds
+
 
 # Class that defines the toplevel window for the Server Connection Status window
 class InitView(ctk.CTkFrame):
@@ -214,3 +251,4 @@ class InitView(ctk.CTkFrame):
     # Sets the system response time value for initView to have access to
     def set_sys_res_time(self, res_time):
         self.sys_res_time = res_time
+

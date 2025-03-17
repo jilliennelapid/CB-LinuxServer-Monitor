@@ -19,11 +19,11 @@ class App(ctk.CTk):
         View.set_controller(view, self.controller)
 
         # Creates window to do the server connection
-        #initView = InitView(self)
-        #InitView.set_controller(initView, self.controller)
-        #self.update_idletasks()
+        initView = InitView(self)
+        InitView.set_controller(initView, self.controller)
+        self.update_idletasks()
         # Window tries to connect to the server
-        #InitView.connect_to_server(initView)
+        InitView.connect_to_server(initView)
 
 
         # Handles the closing of the main window
