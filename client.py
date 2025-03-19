@@ -1,4 +1,3 @@
-
 # Client Side Code
 ### Requests actions for the server to do.
 import socket
@@ -10,7 +9,7 @@ from pathlib import Path
 import paramiko
 
 # Host and Port that Client connects to
-host = "34.71.123.112"
+host = "34.172.196.29"
 port = 3389
 
 BUFFER_SIZE = 32786
@@ -61,8 +60,14 @@ class Client:
                             print("Connection Test Successful: Server responded with 'OK'")
                             self.controller.send_sys_response(payload)
 
+                        # Inside listen_to_server function
                         elif mess_type == "STATS":
-                            self.controller.set_stats(payload)
+                            print(f"Received STATS data: {payload[:50]}...")
+
+                            try:
+                                self.controller.set_stats(payload)
+                            except Exception as e:
+                                print(f"Error processing STATS data: {e}")
 
                         else:
                             print(f"Unknown message type: {mess_type}")

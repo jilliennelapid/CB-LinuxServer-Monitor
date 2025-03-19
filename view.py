@@ -2,12 +2,12 @@
 # Contains all code for drawing the GUI window and aiding its functionality
 import customtkinter as ctk
 from tkinter import font
-import threading
-import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import requests
-import paramiko
+import random
+import threading
+import time
+import json
 
 # Class that defines the Main Window elements
 class View(ctk.CTkFrame):
@@ -69,19 +69,13 @@ class View(ctk.CTkFrame):
 
         stats = ["CPU Usage", "Memory Usage", "Disk Usage", "Network Activity", "I/O Activity"]
 
-        CPU_usage = ctk.StringVar()
-        mem_usage = ctk.StringVar()
-        disk_usage = ctk.StringVar()
-        net_activity = ctk.StringVar()
-        IO_activity = ctk.StringVar()
-
-        statVals = [CPU_usage, mem_usage, disk_usage, net_activity, IO_activity]
+        self.statVals = {stat: ctk.StringVar(value="0%") for stat in stats}  # Default to "0%
 
         for i, stat in enumerate(stats):
             self.labels[stat] = ctk.CTkLabel(self.left_frame, text=f"{stat}:", font=("Helvetica", 20))
             self.labels[stat].grid(row=i, column=0, sticky='w', padx=20, pady=5)
 
-            self.values[stat] = ctk.CTkLabel(self.left_frame, text=statVals[i], font=("Helvetica", 20, 'bold'))
+            self.values[stat] = ctk.CTkLabel(self.left_frame, textvariable=self.statVals[stat], font=("Helvetica", 20, 'bold'))
             self.values[stat].grid(row=i, column=1, sticky='e', padx=(0, 30), pady=5)
 
         """ Right Frame (Graph Display) """
@@ -92,84 +86,115 @@ class View(ctk.CTkFrame):
         self.right_frame.grid_rowconfigure(0, weight=1)
         self.right_frame.grid_columnconfigure(0, weight=1)
 
-        # Create Matplotlib figure and canvas
-        self.fig, self.ax = plt.subplots(figsize=(6, 4), dpi=100)
-        self.ax.set_title("Server Performance Metrics Over Time", fontsize=35, fontweight='bold',
-                          color='blue')
-        self.ax.set_ylim(0, 100)  # Percentage range (0-100%)
-        self.ax.set_xlabel("Time", fontsize=20)
-        self.ax.set_ylabel("Usage (%)", fontsize=20)
+        # Create Matplotlib figure and 5 subplots (stacked)
+        self.fig, self.axs = plt.subplots(5, 1, figsize=(6, 12), dpi=100, sharex=True)
 
+        # Set a common title
+        self.fig.suptitle("Server Performance Metrics Over Time", fontsize=25, fontweight='bold', color='blue')
+
+        # Define metric names and colors
+        metrics = ["CPU Usage", "Memory Usage", "Disk Usage", "Network Activity", "I/O Activity"]
+        colors = ["blue", "red", "green", "purple", "orange"]
+
+        # Store graph properties
+        self.data = {metric: [] for metric in metrics}
+
+        # Configure each subplot
+        for i, (metric, color) in enumerate(zip(metrics, colors)):
+            self.axs[i].set_title(metric, fontsize=15, fontweight="bold", color=color)
+            self.axs[i].set_ylim(0, 100)  # Set y-axis limit (0-100%)
+            self.axs[i].set_ylabel("Usage (%)", fontsize=12)
+            self.axs[i].tick_params(axis='y', labelsize=10)
+            self.axs[i].grid(True)  # Enable grid
+
+        # Set x-axis label only for the last subplot
+        self.axs[-1].set_xlabel("Time", fontsize=14)
+
+        # Create Matplotlib canvas and integrate it with Tkinter
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.right_frame)
         self.canvas.get_tk_widget().pack(pady=10, fill="both", expand=True)
 
-        # Data storage for each metric
-        self.data = {stat: [] for stat in stats}
-        self.colors = {
-            "CPU Usage": "blue",
-            "Memory Usage": "red",
-            "Disk Usage": "green",
-            "Network Activity": "purple",
-            "I/O Activity": "orange"
-        }
 
         # Start graph updates
         # self.update_graph()
 
+    def update_graph_with_new_data(self):
+        try:
+            # Clear previous time points
+            x_points = list(range(max(len(values) for values in self.data.values())))
 
-    def update_graph(self):
-        # Simulating system stats (Replace with actual API/server data)
-        new_stats = {
-            "CPU Usage": random.randint(10, 90),
-            "Memory Usage": random.randint(20, 80),
-            "Disk Usage": random.randint(15, 70),
-            "Network Activity": random.randint(5, 50),
-            "I/O Activity": random.randint(10, 60)
-        }
+            # Update each subplot
+            for i, (metric, values) in enumerate(self.data.items()):
+                ax = self.axs[i]
+                ax.clear()
 
-        for stat, value in new_stats.items():
-            self.values[stat].configure(text=f"{value}%")
-            self.data[stat].append(value)
+                if values:
+                    # Plot the data
+                    ax.plot(values, color=["blue", "red", "green", "purple", "orange"][i],
+                            marker="o", linestyle="-")
 
-            # Keep only last 20 data points
-            if len(self.data[stat]) > 20:
-                self.data[stat].pop(0)
+                    # Configure the subplot
+                    ax.set_title(metric, fontsize=15, fontweight="bold")
+                    ax.set_ylim(0, 100)
+                    ax.set_ylabel("Usage (%)")
+                    ax.grid(True)
 
-        # Update the graph
-        self.ax.clear()
-        self.ax.set_title("Server Performance Metrics Over Time")
-        self.ax.set_ylim(0, 100)
-        self.ax.set_xlabel("Time")
-        self.ax.set_ylabel("Usage (%)")
-
-        for stat, values in self.data.items():
-            self.ax.plot(values, color=self.colors[stat], marker="o", linestyle="-", label=stat)
-
-        self.ax.legend()
-        self.canvas.draw()
-
-        # Refresh every 2 seconds
-        self.after(2000, self.update_graph)
+            # Redraw the canvas
+            self.canvas.draw()
+            print("Graph updated")
+        except Exception as e:
+            print(f"Error updating graph: {e}")
 
     # Sets the controller that view is connected to
     def set_controller(self, controller):
         self.controller = controller
 
     def start_server_monitoring(self):
-        """Start stress test, data collection, and API server."""
+        #Start stress test, data collection, and API server.
         print("Starting monitoring")
         self.controller.start_monitoring()
 
     def update_labels(self, data):
-        """Fetch metrics and update labels in the GUI."""
-        print(data)
+        print(f"View received data: {str(data)[:100]}...")
 
-        if data:
-            for stat, label in self.values.items():
-                label.configure(text=f"{data.get(stat, '-')}%")
+        metrics = None
+        try:
+            # Try to extract filedata if present
+            filedata = data.get("filedata") if isinstance(data, dict) else data
 
-        self.after(5000, self.update_labels)  # Refresh every 5 seconds
+            # Try to parse as JSON if it's a string
+            if isinstance(filedata, str):
+                try:
+                    metrics = json.loads(filedata)
+                    print(f"Parsed metrics into JSON: {metrics}")
+                except json.JSONDecodeError:
+                    print(f"Data already in JSON: {filedata[:100]}")
+            else:
+                metrics = filedata
 
+            # Update the stats display
+            for stat, value in metrics.items():
+                print(f"{stat}, {value}")
+
+                if stat in self.statVals:
+                    try:
+                        # Convert to number and format as percentage
+                        numeric_value = float(value)
+                        self.statVals[stat].set(f"{numeric_value:.1f}%")
+
+                        # Update graph data
+                        if stat in self.data:
+                            self.data[stat].append(numeric_value)
+                            if len(self.data[stat]) > 20:
+                                self.data[stat].pop(0)
+                    except (ValueError, TypeError):
+                        print(f"Invalid value for {stat}: {value}")
+
+            # Update graphs
+            self.update_graph_with_new_data()
+
+        except Exception as e:
+            print(f"Error updating labels: {e}")
 
 # Class that defines the toplevel window for the Server Connection Status window
 class InitView(ctk.CTkFrame):
