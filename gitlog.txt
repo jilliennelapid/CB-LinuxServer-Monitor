@@ -1,0 +1,41 @@
+commit 234a61fa4a20f5ea68cca9e4662b25d6bf267c54
+Author: Jillienne Lapid <jillienne.lapid@gmail.com>
+Date:   Sun Mar 23 23:57:15 2025 -0400
+
+    Adding script files that run on stress-instance.
+
+commit 65d843c4651c411e25798419bf145539ffd50d61
+Author: Jillienne Lapid <jillienne.lapid@gmail.com>
+Date:   Sun Mar 23 23:50:10 2025 -0400
+
+    Worked on data send issue, but was unsuccessful,
+
+commit 994558f30c1c33d86bb75505afe8172850fb7280
+Author: Jillienne Lapid <jillienne.lapid@gmail.com>
+Date:   Wed Mar 19 02:04:27 2025 -0400
+
+    Worked on backend: data sending to client but must be worked with to display in GUI.
+
+commit 0a7012ae0511963707bd6d687259e3412a979762
+Author: Jillienne Lapid <jillienne.lapid@gmail.com>
+Date:   Mon Mar 17 01:44:47 2025 -0400
+
+    Worked on client-server and backend, not finished though.
+
+commit 3d8da130d86841f0552a40073eff8b6f2b2aef10
+Author: Jillienne Lapid <jillienne.lapid@gmail.com>
+Date:   Sun Mar 16 14:13:08 2025 -0400
+
+    Frontend ready, Created GUI layout.
+
+commit 0332d424f88b625960be7e8cc37e08f7aad2aa1b
+Author: Jillienne Lapid <jillienne.lapid@gmail.com>
+Date:   Sun Mar 16 01:36:01 2025 -0400
+
+    Using my Python Client-Server with GUI code base as a starting point for the project.
+
+commit 2d5fbf44f0c9f36822849ee325e8da37832c3928
+Author: Jillienne Lapid <105609817+jilliennelapid@users.noreply.github.com>
+Date:   Mon Feb 24 11:11:40 2025 -0500
+
+    Initial commit
