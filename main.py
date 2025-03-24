@@ -5,6 +5,7 @@ from controller import Controller
 
 import customtkinter as ctk
 
+# Creates the Application Window
 class App(ctk.CTk):
     def __init__(self):
         # Initializes the GUI main window
@@ -22,16 +23,10 @@ class App(ctk.CTk):
         initView = InitView(self)
         InitView.set_controller(initView, self.controller)
         self.update_idletasks()
+
         # Window tries to connect to the server
         InitView.connect_to_server(initView)
 
-
-        # Handles the closing of the main window
-        #self.protocol("WM_DELETE_WINDOW", self.on_close)
-
-    #def on_close(self):
-    #    self.controller.disconnect()
-    #    self.destroy()
 
 if __name__ == '__main__':
     # Creates an object from class App, which also creates the window using tkinter module

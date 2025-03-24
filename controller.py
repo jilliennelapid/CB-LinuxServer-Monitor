@@ -34,12 +34,6 @@ class Controller:
             else:
                 return False
 
-    # Helps make a client request to Disconnect from the Server
-    #def disconnect(self):
-    #    if self.client:
-    #        self.client.request_server_close()
-    #        self.client.close_client()
-
     def start_monitoring(self):
         if self.client:
             threading.Thread(target=self.client.start_stress(), daemon=True).start()
@@ -47,6 +41,9 @@ class Controller:
             while self.proceed:
                 time.sleep(5)
                 self.client.get_data()
+    def stop_monitoring(self):
+        if self.client:
+            threading.Thread(target=self.client.stop_stress(), daemon=True).start()
 
     """ Methods for Sending Data back to the GUI """
     # Sends back the system response time to the GUI

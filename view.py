@@ -22,12 +22,12 @@ class View(ctk.CTkFrame):
         parent.resizable(False, False)
         self.grid(sticky='nsew')
 
-        """ Attributes pertaining to the whole window """
+        # Attributes pertaining to the whole window
         globalFont = font.Font(family='Helvetica')
         parent.grid_rowconfigure(0, weight=1)
         parent.grid_columnconfigure(0, weight=1)
 
-        """ Frame containing Top Left and Top Right Frames """
+        # Frame containing Top Left and Top Right Frames
         self.window_frame = ctk.CTkFrame(parent, fg_color='transparent')
         self.window_frame.grid(row=0, column=0, sticky='nsew')
 
@@ -37,7 +37,7 @@ class View(ctk.CTkFrame):
         self.window_frame.grid_columnconfigure(0, weight=1)  # Left Frame
         self.window_frame.grid_columnconfigure(1, weight=2)  # Right Frame (wider than left)
 
-        """ Top Frame (Full Width) """
+        # Top Frame
         self.top_frame = ctk.CTkFrame(self.window_frame, fg_color='transparent')
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky='nsew')  # Span both columns
         self.top_frame.grid_columnconfigure(0, weight=1)
@@ -49,10 +49,10 @@ class View(ctk.CTkFrame):
         self.start_button = ctk.CTkButton(self.top_frame, corner_radius=5, text='Start Monitoring',
                                                font=(globalFont, 18, 'bold'), fg_color='#59b1f0', hover_color='#3977e3',
                                                text_color='#fafcff', border_spacing=10, height=50,
-                                               command=self.start_server_monitoring)
+                                               command=self.toggle_monitoring)
         self.start_button.grid(row=0, column=1, sticky='e', padx=20, pady=10)
 
-        """ Left Frame (Diagnostics) """
+        # Left Frame (Diagnostics)
         self.left_frame = ctk.CTkFrame(self.window_frame, fg_color='transparent')
         self.left_frame.grid(row=1, column=0, sticky='nsew', padx=10, pady=10)
 
@@ -78,7 +78,7 @@ class View(ctk.CTkFrame):
             self.values[stat] = ctk.CTkLabel(self.left_frame, textvariable=self.statVals[stat], font=("Helvetica", 20, 'bold'))
             self.values[stat].grid(row=i, column=1, sticky='e', padx=(0, 30), pady=5)
 
-        """ Right Frame (Graph Display) """
+        # Right Frame (Graph Display)
         self.right_frame = ctk.CTkFrame(self.window_frame, fg_color='transparent')
         self.right_frame.grid(row=1, column=1, sticky='nsew', padx=10, pady=10)
 
@@ -114,11 +114,10 @@ class View(ctk.CTkFrame):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.right_frame)
         self.canvas.get_tk_widget().pack(pady=10, fill="both", expand=True)
 
-
         # Start graph updates
-        # self.update_graph()
+        self.update_graph()
 
-    def update_graph_with_new_data(self):
+    def update_graph(self):
         try:
             # Clear previous time points
             x_points = list(range(max(len(values) for values in self.data.values())))
@@ -149,11 +148,22 @@ class View(ctk.CTkFrame):
     def set_controller(self, controller):
         self.controller = controller
 
-    def start_server_monitoring(self):
+    # Changes the displayed text on the start/stop button
+    # and begins or stops monitoring
+    def toggle_monitoring(self):
         #Start stress test, data collection, and API server.
-        print("Starting monitoring")
-        self.controller.start_monitoring()
+        if not self.started:
+            print("Starting monitoring")
+            self.start_button.configure(text="Stop Monitoring", fg_color='#59b1f0', hover_color='#3977e3')
+            self.controller.start_monitoring()
+            self.started = True
+        else:
+            print("Stopping monitoring")
+            self.start_button.configure(text="Start Monitoring", fg_color='#59b1f0', hover_color='#3977e3')
+            self.controller.stop_monitoring()
+            self.started = False
 
+    # Updates labels with the data received from the server
     def update_labels(self, data):
         print(f"View received data: {str(data)[:100]}...")
 
@@ -191,7 +201,7 @@ class View(ctk.CTkFrame):
                         print(f"Invalid value for {stat}: {value}")
 
             # Update graphs
-            self.update_graph_with_new_data()
+            self.update_graph()
 
         except Exception as e:
             print(f"Error updating labels: {e}")

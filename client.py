@@ -2,14 +2,10 @@
 ### Requests actions for the server to do.
 import socket
 import json
-import base64
 import threading
-import os
-from pathlib import Path
-import paramiko
 
 # Host and Port that Client connects to
-host = "34.172.196.29"
+host = "34.172.247.182"
 port = 3389
 
 BUFFER_SIZE = 32786
@@ -90,15 +86,18 @@ class Client:
         self.client.send(json.dumps(test_mess).encode(FORMAT))
         return True
 
+    # Sends message to request data from the server
     def get_data(self):
         print("client data request")
         get_mess = {"command": "GETDATA"}
         self.client.send(json.dumps(get_mess).encode(FORMAT))
 
+    # Sends message to request starting of the program
     def start_stress(self):
         start_mess = {"command": "START"}
         self.client.send(json.dumps(start_mess).encode(FORMAT))
 
+    # Sends message to request stopping of the program
     def stop_stress(self):
         stop_mess = {"command": "STOP"}
         self.client.send(json.dumps(stop_mess).encode(FORMAT))
